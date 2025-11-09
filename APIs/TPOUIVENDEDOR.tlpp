@@ -1,0 +1,126 @@
+#include 'totvs.ch'
+#Include "TopConn.ch"
+#include 'tlpp-core.th'
+#include "tlpp-rest.th"
+#Include "FWMVCDef.ch"
+
+
+Class POUITREINAMENTO
+
+    Public Method New()
+
+    @Get('/treinamento/poui/v1/seller')
+	Public Method GetSellers() as logical
+
+
+    @Post('/treinamento/poui/v1/seller')
+    Public Method  PostSellers() as logical
+
+    
+
+End Class
+
+
+Method New() class POUITREINAMENTO
+return Self
+
+
+
+Method GetSellers() class POUITREINAMENTO 
+    Local a_Area            as array
+    Local j_HeaderRes       as json
+    Local j_Sellers         as json
+    Local j_Seller          as json
+
+    a_Area := FwGetArea()
+
+    try 
+        j_HeaderRes 	:= jsonObject():new()
+	    j_HeaderRes['Content-Type']  := "application/json"
+
+        j_Sellers := jsonObject():New()
+
+
+        DbSelectArea("SA3")
+        SA3->(DbGoTop())
+        j_Sellers['sellers'] := {}
+        WHILE SA3->(!EOF())
+            j_Seller := jsonObject():new()
+            j_Seller['code'] := SA3->A3_COD
+            j_Seller['name'] := SA3->A3_NOME
+            aadd(j_Sellers['sellers'], j_Seller)
+            SA3->(DbSkip())
+        enddo
+
+        SA3->(DbCloseArea())
+
+        oRest:setHeaderResponse(j_HeaderRes)
+        oRest:setResponse(j_Sellers:toJson())
+        oRest:setStatusCode(200)
+        
+    catch o_Err
+        c_Error := o_Err:errorstack
+        c_Desc  := o_Err:description
+        n_Cod   := o_Err:gencode
+
+		j_Error := jsonObject():new()
+        j_Error['error']  := c_Desc
+
+		oRest:setFault(j_Error:toJson())
+
+    endtry
+
+
+    FwRestArea(a_Area)
+    
+return .T.
+
+
+Method PostSellers() class POUITREINAMENTO 
+    Local a_Area            as array
+    Local j_HeaderRes       as json
+    Local j_Body            as json
+    Local a_SA3Auto         as array
+    Private lMsErroAuto    := .F. 
+
+
+    a_Area := FwGetArea()
+
+    try 
+        j_HeaderRes 	:= jsonObject():new()
+	    j_HeaderRes['Content-Type']  := "application/json"
+
+        c_Body := oRest:GetBodyRequest()
+        j_Body := JsonObject():New()
+        j_Body:FromJson(c_Body)
+
+        a_SA3Auto := {}
+
+        aAdd( a_SA3Auto, {"A3_COD"   , j_Body['code']   , Nil } )
+        aAdd( a_SA3Auto, {"A3_NOME"  , j_Body['name']  , Nil } )
+        MsExecAuto( {|ER,UD,AM| MATA040(ER,UD,AM)}, a_SA3Auto, 3  )
+
+        If !lMsErroAuto
+            oRest:setHeaderResponse(j_HeaderRes)
+            oRest:setStatusCode(200)
+        else
+            oRest:setHeaderResponse(j_HeaderRes)
+            oRest:setFault("erro ao criar vendedor")
+        Endif
+    catch o_Err
+        c_Error := o_Err:errorstack
+        c_Desc  := o_Err:description
+        n_Cod   := o_Err:gencode
+
+		j_Error := jsonObject():new()
+        j_Error['error']  := c_Desc
+
+		oRest:setFault(j_Error:toJson())
+
+    endtry
+
+
+    FwRestArea(a_Area)
+    
+return .T.
+

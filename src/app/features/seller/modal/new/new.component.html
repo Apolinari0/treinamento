@@ -1,0 +1,32 @@
+<po-modal p-title="Options" [p-primary-action]="confirm" [p-secondary-action]="close">
+  <form #optionsForm="ngForm">
+    <div class="po-row">
+        <po-input
+            class="po-md-12"
+            name="codigo"
+            [(ngModel)]="code"
+            p-label="codigo"
+        > 
+        </po-input>
+    </div>
+    
+
+    <div class="po-row">
+         <po-input
+            class="po-md-12"
+            name="nome"
+            [(ngModel)]="name"
+            p-label="nome"
+        > 
+        </po-input>
+    </div>
+  </form>
+
+  <po-modal-footer [p-disabled-align]="false">
+    <po-button p-danger="true" p-label="Fechar" (p-click)="closeModal()"></po-button>
+    <po-button p-label="Limpar" (p-click)="restore()"></po-button>
+    <po-button p-kind="primary" p-label="Confirmar" (p-click)="confirmModal()"></po-button>
+  </po-modal-footer>
+</po-modal>
+
+<po-button p-label="Inclusão do vendedor" (p-click)="openQuestionnaire()"></po-button>
